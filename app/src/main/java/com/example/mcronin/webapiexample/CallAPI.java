@@ -4,11 +4,9 @@ import android.os.AsyncTask;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -35,10 +33,16 @@ public class CallAPI extends AsyncTask<APIRequest, String, APIResponse> {
         APIResponse response = new APIResponse();
         APIRequest request = requests[0];
 
-        if (request.getRequestMethod() == RequestMethod.GET) {
-            response = HTTPGet(request);
-        } else if (request.getRequestMethod() == RequestMethod.POST) {
-            response = HTTPPost(request);
+        switch (request.getRequestMethod()){
+            case GET:
+                response = HTTPGet(request);
+                break;
+            case POST:
+                response = HTTPPost(request);
+                break;
+            case DELETE:
+                response = HTTPDelete(request);
+                break;
         }
         return response;
     }
@@ -96,6 +100,27 @@ public class CallAPI extends AsyncTask<APIRequest, String, APIResponse> {
         return response;
     }
 
+    private APIResponse HTTPDelete(APIRequest request){
+        APIResponse response = new APIResponse();
+        HttpURLConnection urlConnection;
+        URL url;
+        String path = basePath;
+        try{
+            path = path + "/" + request.getCow().getId();
+            url = new URL(path);
+
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod(request.getRequestMethod().toString());
+            urlConnection.connect();
+
+            response.setResponseCode(urlConnection.getResponseCode());
+            response.setResponseMessage(urlConnection.getResponseMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
+
     private String readStream(InputStream inputStream) {
         String resultJson = "";
         try {
@@ -122,7 +147,8 @@ public class CallAPI extends AsyncTask<APIRequest, String, APIResponse> {
 
     public enum RequestMethod {
         GET,
-        POST
+        POST,
+        DELETE
     }
 
     public interface PostExecutable {
